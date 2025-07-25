@@ -1,0 +1,41 @@
+name: Sync and Build Userscript
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Add upstream and merge
+        run: |
+          git remote add upstream https://github.com/insin/control-panel-for-twitter.git
+          git fetch upstream
+          git checkout main
+          git merge upstream/main || echo "No upstream changes"
+
+      - name: Check if script.js changed
+        id: check
+        run: |
+          git diff --name-only HEAD~1 HEAD | grep "script.js" && echo "changed=true" >> $GITHUB_OUTPUT || echo "changed=false" >> $GITHUB_OUTPUT
+
+      - name: Copy and patch metadata block
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          cp script.js userscript.user.js
+          sed -i '/==UserScript==/a\// @updateURL   https://raw.githubusercontent.com/${{ github.repository }}/main/userscript.user.js\n// @downloadURL https://raw.githubusercontent.com/${{ github.repository }}/main/userscript.user.js' userscript.user.js
+
+      - name: Notify Telegram
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="🚀 Userscript updated:\nhttps://raw.githubusercontent.com/${{ github.repository }}/main/userscript.user.js"
