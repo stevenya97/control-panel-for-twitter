@@ -9,6 +9,8 @@
 // @match       https://mobile.x.com/*
 // @run-at      document-start
 // @version     197
+// @updateURL   https://github.com/stevenya97/control-panel-for-twitter/blob/master/control-panel-for-twitter.user.js
+// @downloadURL https://github.com/stevenya97/control-panel-for-twitter/blob/master/control-panel-for-twitter.user.js
 // ==/UserScript==
 void function() {
 
